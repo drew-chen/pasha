@@ -13,6 +13,8 @@
 #include <cstdint>
 #include <omp.h>
 #include <limits>
+#include <string.h>
+
 using namespace std;
 using unsigned_int = uint64_t;
 using byte = uint8_t;
@@ -72,7 +74,8 @@ class PASHA {
     Generates a complete de Bruijn graph of order k.
     @param k: Desired k-mer length (order of complete graph).
     */
-        for (unsigned_int i = 0; i < edgeNum; i++) edgeArray[i] = 1;
+        // sets each byte of edgeArray (each element)
+        memset(edgeArray, 1, edgeNum);
         edgeCount = edgeNum;
         vertexCount = edgeNum / ALPHABET_SIZE; 
     }
