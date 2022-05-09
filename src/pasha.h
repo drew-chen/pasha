@@ -266,13 +266,12 @@ class PASHA {
                     pathCountStage += hittingNumArray[i];
                 }
             }
-            #pragma omp parallel for collapse (2) num_threads(threads) 
             for (unsigned_int it = 0; it < stageVertices.size(); it++) {
                 for (unsigned_int jt = 0; jt < stageVertices.size(); jt++) {
                     i = stageVertices[it];
                     #pragma omp critical
                     if (pick[i] == false) {
-                        if (((double) rand() / (RAND_MAX)) <= prob) {
+                        if (jt%2==0) {
                             stageArray[i] = 0;
                             pick[i] = true;
                             hittingCountStage += 1;
@@ -280,7 +279,7 @@ class PASHA {
                         }
                         j = stageVertices[jt];
                         if (pick[j] == false) {
-                            if (((double) rand() / (RAND_MAX)) <= prob) {
+                            if (jt%3==0) {
                                 stageArray[j] = 0;
                                 pick[j] = true;
                                 hittingCountStage += 1;
@@ -375,9 +374,9 @@ Calculates hitting number of all edges, counting paths of length L-k+1, in paral
        // double maxF = 0;
         //Fexp(res) = max(Fexp1, Fexp2, Fexp3, Fexp4)
        // Fval(res) = [Fval1 >> (Fexp - Fexp1)] + [Fval2 >> (Fexp - Fexp2)] + [Fval3 >> (Fexp - Fexp3)] + [Fval4 >> (Fexp - Fexp4)]
-        calc_num_starting_paths(D);
 
-        //cudammemset
+        calc_num_starting_paths(D, Fprev);
+        //TODO cudammemset
         #pragma omp parallel for num_threads(threads)
         for (unsigned_int i = 0; i < (unsigned_int)edgeNum; i++) hittingNumArray[i] = 0;
         while (curr <= L) {
