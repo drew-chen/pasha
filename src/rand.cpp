@@ -8,7 +8,7 @@
     #include <sys/stat.h> 
     #include <sys/types.h> 
     #include "decycling.h"
-    #include "pasha_orig_nonrand.h"
+    #include "pasha.h"
     // for testing correctness
     // #include "pasha_orig_nonrand.h"
 
