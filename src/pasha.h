@@ -373,38 +373,7 @@ Calculates hitting number of all edges, counting paths of length L-k+1, in paral
         //Fexp(res) = max(Fexp1, Fexp2, Fexp3, Fexp4)
        // Fval(res) = [Fval1 >> (Fexp - Fexp1)] + [Fval2 >> (Fexp - Fexp2)] + [Fval3 >> (Fexp - Fexp3)] + [Fval4 >> (Fexp - Fexp4)]
 
-        #pragma omp parallel for num_threads(threads)
-        for (unsigned_int i = 0; i < vertexExp; i++) {D_set(0, i, 1.4e-45); Fprev[i] = 1.4e-45;}
-        for (unsigned_int j = 1; j <= L; j++) {
-            #pragma omp parallel for num_threads(threads)
-            for (unsigned_int i = 0; i < vertexExp; i++) {
-                //uint8_t r1;
-                //uint8_t r2;
-                //uint8_t r3;
-                //r1 = (uint8_t)edgeArray[i]*Dexp[j-1][(i >> 2)] ^ (((uint8_t)(edgeArray[i]*Dexp[j-1][(i >> 2)]) ^ (uint8_t)edgeArray[i + vertexExp]*Dexp[j-1][((i + vertexExp) >> 2)])) & -((uint8_t)(edgeArray[i]*Dexp[j-1][(i >> 2)]) < ((uint8_t)edgeArray[i + vertexExp]*Dexp[j-1][((i + vertexExp) >> 2)]));
-                //r2 = (uint8_t)edgeArray[i + vertexExp2]*Dexp[j-1][((i + vertexExp2) >> 2)] ^ (((uint8_t)(edgeArray[i + vertexExp2]*Dexp[j-1][((i + vertexExp2) >> 2)]) ^ (uint8_t)edgeArray[i + vertexExp3]*Dexp[j-1][((i + vertexExp3) >> 2)])) & -((uint8_t)(edgeArray[i]*Dexp[j-1][((i + vertexExp) >> 2)]) < ((uint8_t)edgeArray[i + vertexExp3]*Dexp[j-1][((i + vertexExp3) >> 2)]));
-                //r3 = (uint8_t)r1 ^ ((r1 ^ r2) & -(r1 < r2));
-                //Dexp[j][i] = r3;
-                //Dval[j][i] = (Dval[j-1][(i >> 2)] >> (Dexp[j][i] - Dexp[j-1][(i >> 2)]))*edgeArray[i] + (Dval[j-1][((i + vertexExp) >> 2)] >> (Dexp[j][i] - Dexp[j-1][((i + vertexExp) >> 2)]))*edgeArray[i + vertexExp] + (Dval[j-1][((i + vertexExp2) >> 2)] >> (Dexp[j][i] - Dexp[j-1][((i + vertexExp2) >> 2)]))*edgeArray[i + vertexExp2] + (Dval[j-1][((i + vertexExp3) >> 2)] >> (Dexp[j][i] - Dexp[j-1][((i + vertexExp3) >> 2)]))*edgeArray[i + vertexExp3];
-                //Dexp[j][i] = Dexp[j][i] + ((128 & Dval[j][i]) >> 7);
-                //Dval[j][i] = Dval[j][i] >> ((128 & Dval[j][i]) >> 7);
-                //Dexp[j][i] = Dexp[j][i] + ((64 & Dval[j][i]) >> 6);
-                //Dval[j][i] = Dval[j][i] >> ((64 & Dval[j][i]) >> 6);
-                D_set(
-                    j, 
-                    i, 
-                    edgeArray[i]*D_get(j-1, (i >> 2)) + edgeArray[i + vertexExp]*D_get(j-1,((i + vertexExp) >> 2)) + edgeArray[i + vertexExp2]*D_get(j-1,((i + vertexExp2) >> 2)) + edgeArray[i + vertexExp3]*D_get(j-1,((i + vertexExp3) >> 2))
-                );
-                //cout << (float)(Dval[j][i] * pow(2, Dexp[j][i])) << endl;
-                //D[j][i] = Dval[i];
-                //if ((float)(Dval[j][i] * pow(2, Dexp[j][i])) > maxD) maxD = ((float)Dval[j][i] * pow(2, Dexp[j][i])); 
-            }
-            //if (maxD > std::numeric_limits<half>::max()/4) {
-             //   for (unsigned_int i = 0; i < vertexExp; i++) D[j][i] = D[j][i] * 0.5;
-            //}
-
-
-        }
+        //cudammemset
         #pragma omp parallel for num_threads(threads)
         for (unsigned_int i = 0; i < (unsigned_int)edgeNum; i++) hittingNumArray[i] = 0;
         while (curr <= L) {
