@@ -26,7 +26,8 @@ class PASHA {
         double delta;
         double epsilon;
         double* hittingNumArray;
-        float** D;
+        // 2D arr row-major. vertexExp long row, l+1 long columns
+        float* D;
         float* Fcurr;
         float* Fprev;
         //byte** Dexp;
@@ -230,10 +231,8 @@ class PASHA {
         finished = new byte[vertexExp];
         pick = new byte[(unsigned_int)edgeNum];
         topoSort = new int[vertexExp];
-        D = new float*[l + 1];
+        D = new float[(l + 1)*vertexExp];
         //Dexp = new byte*[l + 1];
-       //float* Dpool = new float[(l+1)* vertexExp];
-        for(unsigned_int i = 0; i < l+1; i++) {D[i] = new float[vertexExp];}
         //hittingStream.open(hittingFile); 
         Fcurr = new float[vertexExp];
         Fprev = new float[vertexExp];
@@ -375,7 +374,7 @@ Calculates hitting number of all edges, counting paths of length L-k+1, in paral
        // Fval(res) = [Fval1 >> (Fexp - Fexp1)] + [Fval2 >> (Fexp - Fexp2)] + [Fval3 >> (Fexp - Fexp3)] + [Fval4 >> (Fexp - Fexp4)]
 
         #pragma omp parallel for num_threads(threads)
-        for (unsigned_int i = 0; i < vertexExp; i++) {D[0][i] = 1.4e-45; Fprev[i] = 1.4e-45;}
+        for (unsigned_int i = 0; i < vertexExp; i++) {D_set(0, i, 1.4e-45); Fprev[i] = 1.4e-45;}
         for (unsigned_int j = 1; j <= L; j++) {
             #pragma omp parallel for num_threads(threads)
             for (unsigned_int i = 0; i < vertexExp; i++) {
@@ -391,7 +390,11 @@ Calculates hitting number of all edges, counting paths of length L-k+1, in paral
                 //Dval[j][i] = Dval[j][i] >> ((128 & Dval[j][i]) >> 7);
                 //Dexp[j][i] = Dexp[j][i] + ((64 & Dval[j][i]) >> 6);
                 //Dval[j][i] = Dval[j][i] >> ((64 & Dval[j][i]) >> 6);
-                D[j][i] = edgeArray[i]*D[j-1][(i >> 2)] + edgeArray[i + vertexExp]*D[j-1][((i + vertexExp) >> 2)] + edgeArray[i + vertexExp2]*D[j-1][((i + vertexExp2) >> 2)] + edgeArray[i + vertexExp3]*D[j-1][((i + vertexExp3) >> 2)];
+                D_set(
+                    j, 
+                    i, 
+                    edgeArray[i]*D_get(j-1, (i >> 2)) + edgeArray[i + vertexExp]*D_get(j-1,((i + vertexExp) >> 2)) + edgeArray[i + vertexExp2]*D_get(j-1,((i + vertexExp2) >> 2)) + edgeArray[i + vertexExp3]*D_get(j-1,((i + vertexExp3) >> 2))
+                );
                 //cout << (float)(Dval[j][i] * pow(2, Dexp[j][i])) << endl;
                 //D[j][i] = Dval[i];
                 //if ((float)(Dval[j][i] * pow(2, Dexp[j][i])) > maxD) maxD = ((float)Dval[j][i] * pow(2, Dexp[j][i])); 
@@ -421,7 +424,7 @@ Calculates hitting number of all edges, counting paths of length L-k+1, in paral
             #pragma omp parallel for num_threads(threads)
             for (unsigned_int i = 0; i < (unsigned_int)edgeNum; i++) {
                 //cout << Fprev[i % vertexExp] << " " << ((float)(Dval[(L-curr)][i / ALPHABET_SIZE] * pow(2, Dexp[(L-curr)][i / ALPHABET_SIZE]))) << endl;
-                hittingNumArray[i] += (Fprev[i % vertexExp]/1.4e-45) * (D[(L-curr)][i / ALPHABET_SIZE]/1.4e-45);
+                hittingNumArray[i] += (Fprev[i % vertexExp]/1.4e-45) * (D_get((L-curr),i / ALPHABET_SIZE)/1.4e-45);
                 //cout << hittingNumArray[i] << endl;
                 if (edgeArray[i] == 0) hittingNumArray[i] = 0;
             }
@@ -448,5 +451,13 @@ Calculates hitting number of all edges, counting paths of length L-k+1, in paral
         }
         return stageVertices;
     }
+    private:
+    float D_get(int row, int col) {
+        return D[row*vertexExp + col];
+    }
+    void D_set(int row, int col, float val) {
+        D[row*vertexExp + col] = val;
+    }
+
 };
 #endif
