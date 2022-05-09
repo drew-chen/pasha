@@ -238,6 +238,8 @@ class PASHA {
         Fprev = new float[vertexExp];
         //double* Fpool = new double[(l+1)* vertexExp];
        // for(int i = 0; i < l+1; i++, Fpool += vertexExp) F[i] = Fpool;
+        init(L)
+        
         calculatePaths(l, threads);
         unsigned_int imaxHittingNum = calculateHittingNumberParallel(l, false, threads);
         cout << "Max hitting number: " << hittingNumArray[imaxHittingNum] << endl;
