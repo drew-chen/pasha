@@ -8,7 +8,10 @@
     #include <sys/stat.h> 
     #include <sys/types.h> 
     #include "decycling.h"
-    #include "pasha.h"
+    #include "pasha_orig_nonrand.h"
+    // for testing correctness
+    // #include "pasha_orig_nonrand.h"
+
     int main(int argc, char* argv[])
     {
         struct timespec start, finish;
