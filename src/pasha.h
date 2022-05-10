@@ -266,12 +266,15 @@ class PASHA {
                     pathCountStage += hittingNumArray[i];
                 }
             }
+            #pragma omp parallel for collapse (2) num_threads(threads) 
             for (unsigned_int it = 0; it < stageVertices.size(); it++) {
                 for (unsigned_int jt = 0; jt < stageVertices.size(); jt++) {
                     i = stageVertices[it];
                     #pragma omp critical
                     if (pick[i] == false) {
-                        if (jt%2==0) {
+                        if (((double) rand() / (RAND_MAX)) <= prob) {
+
+                        // if (jt%2==0) {
                             stageArray[i] = 0;
                             pick[i] = true;
                             hittingCountStage += 1;
@@ -279,7 +282,8 @@ class PASHA {
                         }
                         j = stageVertices[jt];
                         if (pick[j] == false) {
-                            if (jt%3==0) {
+                            if (((double) rand() / (RAND_MAX)) <= prob) {
+                            // if (jt%3==0) {
                                 stageArray[j] = 0;
                                 pick[j] = true;
                                 hittingCountStage += 1;
