@@ -390,7 +390,10 @@ Calculates hitting number of all edges, counting paths of length L-k+1, in paral
                 //Dval[j][i] = Dval[j][i] >> ((128 & Dval[j][i]) >> 7);
                 //Dexp[j][i] = Dexp[j][i] + ((64 & Dval[j][i]) >> 6);
                 //Dval[j][i] = Dval[j][i] >> ((64 & Dval[j][i]) >> 6);
-                D[j][i] = edgeArray[i]*D[j-1][(i >> 2)] + edgeArray[i + vertexExp]*D[j-1][((i + vertexExp) >> 2)] + edgeArray[i + vertexExp2]*D[j-1][((i + vertexExp2) >> 2)] + edgeArray[i + vertexExp3]*D[j-1][((i + vertexExp3) >> 2)];
+                D[j][i] = edgeArray[i]*D[j-1][(i >> 2)]
+                 + edgeArray[i + vertexExp]*D[j-1][((i + vertexExp) >> 2)]
+                 + edgeArray[i + vertexExp2]*D[j-1][((i + vertexExp2) >> 2)]
+                 + edgeArray[i + vertexExp3]*D[j-1][((i + vertexExp3) >> 2)];
                 //cout << (float)(Dval[j][i] * pow(2, Dexp[j][i])) << endl;
                 //D[j][i] = Dval[i];
                 //if ((float)(Dval[j][i] * pow(2, Dexp[j][i])) > maxD) maxD = ((float)Dval[j][i] * pow(2, Dexp[j][i])); 
@@ -420,7 +423,7 @@ Calculates hitting number of all edges, counting paths of length L-k+1, in paral
             #pragma omp parallel for num_threads(threads)
             for (unsigned_int i = 0; i < (unsigned_int)edgeNum; i++) {
                 //cout << Fprev[i % vertexExp] << " " << ((float)(Dval[(L-curr)][i / ALPHABET_SIZE] * pow(2, Dexp[(L-curr)][i / ALPHABET_SIZE]))) << endl;
-                hittingNumArray[i] += (Fprev[i % vertexExp]/1.4e-45) * (D[(L-curr)][i / ALPHABET_SIZE]/1.4e-45);
+                hittingNumArray[i] += (Fprev[i % vertexExp]/1.4e-45) * (D[L-curr][i / ALPHABET_SIZE] / 1.4e-45);
                 //cout << hittingNumArray[i] << endl;
                 if (edgeArray[i] == 0) hittingNumArray[i] = 0;
             }

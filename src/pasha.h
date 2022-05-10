@@ -239,7 +239,7 @@ class PASHA {
         Fprev = new float[vertexExp];
         //double* Fpool = new double[(l+1)* vertexExp];
        // for(int i = 0; i < l+1; i++, Fpool += vertexExp) F[i] = Fpool;
-        initHittingNum(L, vertexExp, edgeArray, edgeNum, D, (unsigned_int)(l+1)*vertexExp);
+        initHittingNum(L, vertexExp, (unsigned_int)(l+1)*vertexExp, edgeNum, edgeArray);
         
         calculatePaths(l, threads);
         unsigned_int imaxHittingNum = calculateHittingNumberParallel(l, false, threads);
@@ -375,7 +375,7 @@ Calculates hitting number of all edges, counting paths of length L-k+1, in paral
         //Fexp(res) = max(Fexp1, Fexp2, Fexp3, Fexp4)
        // Fval(res) = [Fval1 >> (Fexp - Fexp1)] + [Fval2 >> (Fexp - Fexp2)] + [Fval3 >> (Fexp - Fexp3)] + [Fval4 >> (Fexp - Fexp4)]
 
-        calcNumStartingPaths(D, Fprev);
+        calcNumStartingPaths(edgeArray, D, Fprev);
         //TODO cudammemset
         #pragma omp parallel for num_threads(threads)
         for (unsigned_int i = 0; i < (unsigned_int)edgeNum; i++) hittingNumArray[i] = 0;
@@ -396,7 +396,7 @@ Calculates hitting number of all edges, counting paths of length L-k+1, in paral
             #pragma omp parallel for num_threads(threads)
             for (unsigned_int i = 0; i < (unsigned_int)edgeNum; i++) {
                 //cout << Fprev[i % vertexExp] << " " << ((float)(Dval[(L-curr)][i / ALPHABET_SIZE] * pow(2, Dexp[(L-curr)][i / ALPHABET_SIZE]))) << endl;
-                hittingNumArray[i] += (Fprev[i % vertexExp]/1.4e-45) * (D_get((L-curr),i / ALPHABET_SIZE)/1.4e-45);
+                hittingNumArray[i] += (Fprev[i % vertexExp] / 1.4e-45) * (D_get(L-curr,i / ALPHABET_SIZE) / 1.4e-45);
                 //cout << hittingNumArray[i] << endl;
                 if (edgeArray[i] == 0) hittingNumArray[i] = 0;
             }
