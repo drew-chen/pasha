@@ -366,66 +366,6 @@ Calculates hitting number of all edges, counting paths of length L-k+1, in paral
         return imaxHittingNum;
     }
 
-    int calculatePaths(unsigned_int L, unsigned_int threads) {
-    /**
-    Calculates number of L-k+1 long paths for all vertices.
-    @param L: Sequence length.
-    @return 1: True if path calculation completes.
-    */
-        omp_set_dynamic(0);
-        curr = 1;
-        vertexExp2 = vertexExp * 2;
-        vertexExp3 = vertexExp * 3;
-        vertexExpMask = vertexExp - 1;
-        vertexExp_1 = pow(ALPHABET_SIZE, k-2);
-        //double maxD = 0;
-       // double maxF = 0;
-        //Fexp(res) = max(Fexp1, Fexp2, Fexp3, Fexp4)
-       // Fval(res) = [Fval1 >> (Fexp - Fexp1)] + [Fval2 >> (Fexp - Fexp2)] + [Fval3 >> (Fexp - Fexp3)] + [Fval4 >> (Fexp - Fexp4)]
-
-        // #pragma omp parallel for num_threads(threads)
-        // for (unsigned_int i = 0; i < vertexExp; i++) {D_set(0, i, 1.4e-45); Fprev[i] = 1.4e-45;}
-        // for (unsigned_int j = 1; j <= L; j++) {
-        //     #pragma omp parallel for num_threads(threads)
-        //     for (unsigned_int i = 0; i < vertexExp; i++) {
-        //         D_set(
-        //             j, 
-        //             i, 
-        //             edgeArray[i]*D_get(j-1, (i >> 2))
-        //              + edgeArray[i + vertexExp]*D_get(j-1,((i + vertexExp) >> 2))
-        //              + edgeArray[i + vertexExp2]*D_get(j-1,((i + vertexExp2) >> 2))
-        //              + edgeArray[i + vertexExp3]*D_get(j-1,((i + vertexExp3) >> 2))
-        //         );
- 
-        //     }
-        // }
-        // cout<<"D[i]:"<<D[(l+1)*vertexExp - 1]<<endl;
-
-        //TODO cudammemset
-        // #pragma omp parallel for num_threads(threads)
-        // for (unsigned_int i = 0; i < (unsigned_int)edgeNum; i++) hittingNumArray[i] = 0;
-        while (curr <= L) {
-            #pragma omp parallel for num_threads(threads)
-            for (unsigned_int i = 0; i < vertexExp; i++) {
-                unsigned_int index = (i * 4);
-                Fcurr[i] = (edgeArray[index]*Fprev[index & vertexExpMask] + edgeArray[index + 1]*Fprev[(index + 1) & vertexExpMask] + edgeArray[index + 2]*Fprev[(index + 2) & vertexExpMask] + edgeArray[index + 3]*Fprev[(index + 3) & vertexExpMask]);
-
-            }
-            #pragma omp parallel for num_threads(threads)
-            for (unsigned_int i = 0; i < (unsigned_int)edgeNum; i++) {
-                //cout << Fprev[i % vertexExp] << " " << ((float)(Dval[(L-curr)][i / ALPHABET_SIZE] * pow(2, Dexp[(L-curr)][i / ALPHABET_SIZE]))) << endl;
-                hittingNumArray[i] += (Fprev[i % vertexExp] / 1.4e-45) * (D_get(L-curr,i / ALPHABET_SIZE) / 1.4e-45);
-                //cout << hittingNumArray[i] << endl;
-                if (edgeArray[i] == 0) hittingNumArray[i] = 0;
-            }
-            #pragma omp parallel for num_threads(threads)
-            for (unsigned_int i = 0; i < vertexExp; i++) Fprev[i] = Fcurr[i];
-            curr++;
-            //cout << curr << endl;
-        }
-        //cout << "MaxD: " << maxD << " maxF: " << maxF << endl;
-        return 1;
-    }
     int findLog(double base, double x) {
     /**
     Finds the logarithm of a given number with respect to a given base.
