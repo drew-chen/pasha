@@ -266,15 +266,15 @@ class PASHA {
                     pathCountStage += hittingNumArray[i];
                 }
             }
-            #pragma omp parallel for collapse (2) num_threads(threads) 
+            // #pragma omp parallel for collapse (2) num_threads(threads) 
             for (unsigned_int it = 0; it < stageVertices.size(); it++) {
                 for (unsigned_int jt = 0; jt < stageVertices.size(); jt++) {
                     i = stageVertices[it];
                     #pragma omp critical
                     if (pick[i] == false) {
-                        if (((double) rand() / (RAND_MAX)) <= prob) {
+                        // if (((double) rand() / (RAND_MAX)) <= prob) {
 
-                        // if (jt%2==0) {
+                        if (jt%2==0) {
                             stageArray[i] = 0;
                             pick[i] = true;
                             hittingCountStage += 1;
@@ -282,8 +282,8 @@ class PASHA {
                         }
                         j = stageVertices[jt];
                         if (pick[j] == false) {
-                            if (((double) rand() / (RAND_MAX)) <= prob) {
-                            // if (jt%3==0) {
+                            // if (((double) rand() / (RAND_MAX)) <= prob) {
+                            if (jt%3==0) {
                                 stageArray[j] = 0;
                                 pick[j] = true;
                                 hittingCountStage += 1;
@@ -380,6 +380,25 @@ Calculates hitting number of all edges, counting paths of length L-k+1, in paral
        // Fval(res) = [Fval1 >> (Fexp - Fexp1)] + [Fval2 >> (Fexp - Fexp2)] + [Fval3 >> (Fexp - Fexp3)] + [Fval4 >> (Fexp - Fexp4)]
 
         calcNumStartingPaths(edgeArray, D, Fprev);
+
+        // #pragma omp parallel for num_threads(threads)
+        // for (unsigned_int i = 0; i < vertexExp; i++) {D_set(0, i, 1.4e-45); Fprev[i] = 1.4e-45;}
+        // for (unsigned_int j = 1; j <= L; j++) {
+        //     #pragma omp parallel for num_threads(threads)
+        //     for (unsigned_int i = 0; i < vertexExp; i++) {
+        //         D_set(
+        //             j, 
+        //             i, 
+        //             edgeArray[i]*D_get(j-1, (i >> 2))
+        //              + edgeArray[i + vertexExp]*D_get(j-1,((i + vertexExp) >> 2))
+        //              + edgeArray[i + vertexExp2]*D_get(j-1,((i + vertexExp2) >> 2))
+        //              + edgeArray[i + vertexExp3]*D_get(j-1,((i + vertexExp3) >> 2))
+        //         );
+ 
+        //     }
+        // }
+        // cout<<"D[i]:"<<D[(l+1)*vertexExp - 1]<<endl;
+
         //TODO cudammemset
         #pragma omp parallel for num_threads(threads)
         for (unsigned_int i = 0; i < (unsigned_int)edgeNum; i++) hittingNumArray[i] = 0;

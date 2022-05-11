@@ -43,8 +43,6 @@ void initHittingNum(unsigned_int LParam, unsigned_int vertexExpParam, unsigned_i
     cudaMalloc((void**)&Fprev_gpu, vertexExp*sizeof(float));
     cudaMalloc((void**)&Fcurr_gpu, vertexExp*sizeof(float));
 
-    cudaMemcpy(edgeArray_gpu, edgeArray, numEdges*sizeof(byte), cudaMemcpyHostToDevice);
-
     // MemcpyToSymbol is for consts
     cudaMemcpyToSymbol(d_vertexExp, &vertexExpParam, sizeof(unsigned_int));
 }
@@ -83,26 +81,23 @@ void calcNumStartingPaths(byte* edgeArray, float* D, float* Fprev) {
     */
     // want tid range [0, vertexExp)
     // edgeArray changes outside of this func so must cpy
-    cudaMemcpy(edgeArray_gpu, edgeArray, vertexExp*sizeof(byte), cudaMemcpyHostToDevice);
-    // cudaMemcpy(D_gpu, D, dSize*sizeof(float), cudaMemcpyHostToDevice);
-    // cudaMemcpy(Fprev_gpu, Fprev_gpu, numEdges*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(edgeArray_gpu, edgeArray, numEdges*sizeof(byte), cudaMemcpyHostToDevice);
 
     int grid_size = 1 + ((vertexExp - 1) / NUM_THREADS);
     setInitialDFprev_gpu<<<grid_size, NUM_THREADS>>>(D_gpu, Fprev_gpu); 
 
-
-    // TODO: replace loop with this https://towardsdatascience.com/gpu-optimized-dynamic-programming-8d5ba3d7064f
+    // THE ISSUE IS HERE
+    // // TODO: replace loop with this https://towardsdatascience.com/gpu-optimized-dynamic-programming-8d5ba3d7064f
     for (unsigned_int j = 1; j <= L; j++) {
         calcNumStartingPathsOneIter_gpu<<<grid_size, NUM_THREADS>>>(D_gpu, edgeArray_gpu, j); 
     }
 
 
+
     cudaMemcpy(D, D_gpu, dSize*sizeof(float),  cudaMemcpyDeviceToHost);
     cudaMemcpy(Fprev, Fprev_gpu, vertexExp*sizeof(float),  cudaMemcpyDeviceToHost);
-
     // cudaError_t err = cudaGetLastError();
     // if (err != cudaSuccess) 
     //     printf("Error: %s\n", cudaGetErrorString(err));
     // printf("---END---\n");
-    cudaDeviceSynchronize();
 }
