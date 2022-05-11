@@ -9,6 +9,9 @@
 
 PASHA is a tool for research and still under development. It is not presented as accurate or free of any errors, and is provided "AS IS", without warranty of any kind.
 
+---
+This fork uses CUDA to calculate hitting numbers (number of l-long paths vertexes are a part of).
+
 ## Installation and setup
 
 ### Installing the package
@@ -16,9 +19,7 @@ PASHA is a tool for research and still under development. It is not presented as
 Clone the repository to your local machine, and compile via `g++` using the commands:
 
 `cd src`<br>
-`g++ -O3 -o pasha rand.cpp -fopenmp`
-
-The `-O3` or `-Ofast` flag is necessary for efficient parallelization and optimization. The `-fopenmp` flag is needed to process parallelization via OpenMP.
+`nvcc -o pasha rand.cpp hitting_num.cu -Xcompiler -fopenmp -lgomp`
 
 ### Example commands
 
