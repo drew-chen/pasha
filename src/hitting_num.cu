@@ -69,9 +69,9 @@ __global__ void calcNumStartingPathsOneIter_gpu(float* D, byte* edgeArray, int j
     
     D_set(D, j, i, 
         edgeArray[i]*D_get(D, j-1, (i >> 2))
-            + edgeArray[i + d_vertexExp]*D_get(D, j-1,((i + d_vertexExp) >> 2))
-            + edgeArray[i + vertexExp2]*D_get(D, j-1,((i + vertexExp2) >> 2))
-            + edgeArray[i + vertexExp3]*D_get(D, j-1,((i + vertexExp3) >> 2))
+            + edgeArray[i]*D_get(D, j-1,((i + d_vertexExp) >> 2))
+            + edgeArray[i]*D_get(D, j-1,((i + vertexExp2) >> 2))
+            + edgeArray[i]*D_get(D, j-1,((i + vertexExp3) >> 2))
     );
 }
 
