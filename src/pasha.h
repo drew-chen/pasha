@@ -241,7 +241,9 @@ class PASHA {
        // for(int i = 0; i < l+1; i++, Fpool += vertexExp) F[i] = Fpool;
         initHittingNum(L, vertexExp, (unsigned_int)(l+1)*vertexExp, edgeNum, edgeArray);
         
-        calculatePaths(l, threads);
+
+        calcNumPaths(edgeArray, D, hittingNumArray);
+
         unsigned_int imaxHittingNum = calculateHittingNumberParallel(l, false, threads);
         cout << "Max hitting number: " << hittingNumArray[imaxHittingNum] << endl;
         h = findLog((1.0+epsilon), hittingNumArray[imaxHittingNum]);
@@ -251,7 +253,8 @@ class PASHA {
             total = 0;
             unsigned_int hittingCountStage = 0;
             double pathCountStage = 0;
-            calculatePaths(l, threads);
+            calcNumPaths(edgeArray, D, hittingNumArray);
+
             imaxHittingNum = calculateHittingNumberParallel(l, true, threads);
             if (exit == -1) break;
             stageVertices = pushBackVector();
@@ -353,6 +356,7 @@ Calculates hitting number of all edges, counting paths of length L-k+1, in paral
                 }   
             }
         }
+        // TODO: move tthis into kernel
         for (unsigned_int i = 0; i < (unsigned_int)edgeNum; i++) {
             if ((hittingNumArray[i])*edgeArray[i] > maxHittingNum) {
                 maxHittingNum = hittingNumArray[i]; imaxHittingNum = i;
@@ -379,8 +383,6 @@ Calculates hitting number of all edges, counting paths of length L-k+1, in paral
         //Fexp(res) = max(Fexp1, Fexp2, Fexp3, Fexp4)
        // Fval(res) = [Fval1 >> (Fexp - Fexp1)] + [Fval2 >> (Fexp - Fexp2)] + [Fval3 >> (Fexp - Fexp3)] + [Fval4 >> (Fexp - Fexp4)]
 
-        calcNumStartingPaths(edgeArray, D, Fprev);
-
         // #pragma omp parallel for num_threads(threads)
         // for (unsigned_int i = 0; i < vertexExp; i++) {D_set(0, i, 1.4e-45); Fprev[i] = 1.4e-45;}
         // for (unsigned_int j = 1; j <= L; j++) {
@@ -400,21 +402,14 @@ Calculates hitting number of all edges, counting paths of length L-k+1, in paral
         // cout<<"D[i]:"<<D[(l+1)*vertexExp - 1]<<endl;
 
         //TODO cudammemset
-        #pragma omp parallel for num_threads(threads)
-        for (unsigned_int i = 0; i < (unsigned_int)edgeNum; i++) hittingNumArray[i] = 0;
+        // #pragma omp parallel for num_threads(threads)
+        // for (unsigned_int i = 0; i < (unsigned_int)edgeNum; i++) hittingNumArray[i] = 0;
         while (curr <= L) {
             #pragma omp parallel for num_threads(threads)
             for (unsigned_int i = 0; i < vertexExp; i++) {
                 unsigned_int index = (i * 4);
                 Fcurr[i] = (edgeArray[index]*Fprev[index & vertexExpMask] + edgeArray[index + 1]*Fprev[(index + 1) & vertexExpMask] + edgeArray[index + 2]*Fprev[(index + 2) & vertexExpMask] + edgeArray[index + 3]*Fprev[(index + 3) & vertexExpMask]);
-                //cout << "Fexp: " << Fexp[i] << endl;
-                //Fval[i] = (Fprev[index & vertexExpMask] >> (Fexp[i] - Fexp[index & vertexExpMask])) + (Fprev[(index+1) & vertexExpMask] >> (Fexp[i] - Fexp[(index+1) & vertexExpMask])) + (Fprev[(index+2) & vertexExpMask] >> (Fexp[i] - Fexp[(index+2) & vertexExpMask])) + (Fprev[(index+3) & vertexExpMask] >> (Fexp[i] - Fexp[(index+3) & vertexExpMask]));
-                //if (Fval[i] > 63) {
-                //    Fexp[i] = Fexp[i] + 1;
-                //    Fval[i] = Fval[i] >> 1;
-                //}
-               //if (Fcurr[i] > maxF) maxF = Fcurr[i]; 
-               //cout << Fval[i] << endl;
+
             }
             #pragma omp parallel for num_threads(threads)
             for (unsigned_int i = 0; i < (unsigned_int)edgeNum; i++) {

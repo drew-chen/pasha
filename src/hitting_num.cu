@@ -7,9 +7,11 @@ using unsigned_int = uint64_t;
 using byte = uint8_t;
 
 #define NUM_THREADS 256
+#define ALPHABET_SIZE 4
+// 2^(−149)
+#define MINPOS_FLOAT 1.4e-45
 
-
-__constant__ unsigned_int d_vertexExp;
+__constant__ unsigned_int vertexExp_gpu;
 unsigned_int vertexExp;
 unsigned_int L;
 unsigned_int dSize;
@@ -20,16 +22,16 @@ unsigned_int numEdges;
 byte* edgeArray_gpu;
 float* Fprev_gpu;
 float* Fcurr_gpu;
-// a host pointer pointing to the copy of D on the gpu
 float* D_gpu;
+double* hittingNumArray_gpu;
 
 
 // assumes already inited
 __device__ float D_get(float* D, int row, int col) {
-    return D[row*d_vertexExp + col];
+    return D[row*vertexExp_gpu + col];
 }
 __device__ void D_set(float* D, int row, int col, float val) {
-    D[row*d_vertexExp + col] = val;
+    D[row*vertexExp_gpu + col] = val;
 }
 
 void initHittingNum(unsigned_int LParam, unsigned_int vertexExpParam, unsigned_int dSizeParam, unsigned_int numEdgesParam, byte* edgeArray) {
@@ -42,9 +44,10 @@ void initHittingNum(unsigned_int LParam, unsigned_int vertexExpParam, unsigned_i
     cudaMalloc((void**)&D_gpu, dSize*sizeof(float));
     cudaMalloc((void**)&Fprev_gpu, vertexExp*sizeof(float));
     cudaMalloc((void**)&Fcurr_gpu, vertexExp*sizeof(float));
+    cudaMalloc((void**)&hittingNumArray_gpu, numEdges*sizeof(double));
 
     // MemcpyToSymbol is for consts
-    cudaMemcpyToSymbol(d_vertexExp, &vertexExpParam, sizeof(unsigned_int));
+    cudaMemcpyToSymbol(vertexExp_gpu, &vertexExpParam, sizeof(unsigned_int));
 }
 
 void finalizeHittingNum() {
@@ -55,23 +58,23 @@ void finalizeHittingNum() {
 }
 
 __global__ void setInitialDFprev_gpu(float* D, float* Fprev) {
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    if (tid >= d_vertexExp) return;
-    D_set(D, 0, tid, 1.4e-45);
-    Fprev[tid] = 1.4e-45;
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    if (i >= vertexExp_gpu) return;
+    D_set(D, 0, i, MINPOS_FLOAT);
+    Fprev[i] = MINPOS_FLOAT;
 }
 
 __global__ void calcNumStartingPathsOneIter_gpu(float* D, byte* edgeArray, int j) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
-    if (i >= d_vertexExp) return;
-    unsigned_int vertexExp2 = d_vertexExp * 2;
-    unsigned_int vertexExp3 = d_vertexExp * 3;
+    if (i >= vertexExp_gpu) return;
+    unsigned_int vertexExp2 = vertexExp_gpu * 2;
+    unsigned_int vertexExp3 = vertexExp_gpu * 3;
     
     D_set(D, j, i, 
         edgeArray[i]*D_get(D, j-1, (i >> 2))
-            + edgeArray[i]*D_get(D, j-1,((i + d_vertexExp) >> 2))
-            + edgeArray[i]*D_get(D, j-1,((i + vertexExp2) >> 2))
-            + edgeArray[i]*D_get(D, j-1,((i + vertexExp3) >> 2))
+            + edgeArray[i + vertexExp_gpu]*D_get(D, j-1,((i + vertexExp_gpu) >> 2))
+            + edgeArray[i + vertexExp2]*D_get(D, j-1,((i + vertexExp2) >> 2))
+            + edgeArray[i + vertexExp3]*D_get(D, j-1,((i + vertexExp3) >> 2))
     );
 }
 
@@ -80,13 +83,10 @@ void calcNumStartingPaths(byte* edgeArray, float* D, float* Fprev) {
     * This function generates D. D(v,i): # of i long paths starting from v after decycling
     */
     // want tid range [0, vertexExp)
-    // edgeArray changes outside of this func so must cpy
-    cudaMemcpy(edgeArray_gpu, edgeArray, numEdges*sizeof(byte), cudaMemcpyHostToDevice);
 
     int grid_size = 1 + ((vertexExp - 1) / NUM_THREADS);
     setInitialDFprev_gpu<<<grid_size, NUM_THREADS>>>(D_gpu, Fprev_gpu); 
 
-    // THE ISSUE IS HERE
     // // TODO: replace loop with this https://towardsdatascience.com/gpu-optimized-dynamic-programming-8d5ba3d7064f
     for (unsigned_int j = 1; j <= L; j++) {
         calcNumStartingPathsOneIter_gpu<<<grid_size, NUM_THREADS>>>(D_gpu, edgeArray_gpu, j); 
@@ -100,4 +100,57 @@ void calcNumStartingPaths(byte* edgeArray, float* D, float* Fprev) {
     // if (err != cudaSuccess) 
     //     printf("Error: %s\n", cudaGetErrorString(err));
     // printf("---END---\n");
+}
+
+__global__ void calcNumEndingPaths(byte* edgeArray, float* D, float* Fprev, float* Fcurr) {
+    /**
+    * This function generates F. F(v,i): # of i long paths ending at v after decycling
+    */
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    if (i >= vertexExp_gpu) return;
+
+    unsigned_int vertexExpMask = vertexExp_gpu - 1;
+
+    unsigned_int index = i*4;
+    Fcurr[i] = (edgeArray[index]*Fprev[index & vertexExpMask]
+         + edgeArray[index + 1]*Fprev[(index + 1) & vertexExpMask]
+         + edgeArray[index + 2]*Fprev[(index + 2) & vertexExpMask]
+         + edgeArray[index + 3]*Fprev[(index + 3) & vertexExpMask]);
+
+}
+
+__global__ void calcHittingNums(double* hittingNums, byte* edgeArray, float* D, float* Fprev, int dRow) {
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    if (i >= vertexExp_gpu || edgeArray[i] == 0) return;
+
+    hittingNums[i] += (Fprev[i % vertexExp_gpu] / MINPOS_FLOAT)
+        * (D_get(D, dRow, i / ALPHABET_SIZE) / MINPOS_FLOAT);
+}
+
+// TODO: calculate max hitting number here
+void calcNumPaths(byte* edgeArray, float* D, double* hittingNumArray) {
+
+    // edgeArray changes outside of this func so must cpy
+    cudaMemcpy(edgeArray_gpu, edgeArray, numEdges*sizeof(byte), cudaMemcpyHostToDevice);
+    cudaMemset(hittingNumArray_gpu, 0, numEdges*sizeof(double));
+
+    calcNumStartingPaths(edgeArray_gpu, D_gpu, Fprev_gpu);
+
+
+    for (int l = 0; l < L; ++l) {
+        int grid_size = 1 + ((vertexExp - 1) / NUM_THREADS);
+        calcNumEndingPaths<<<grid_size, NUM_THREADS>>>(edgeArray_gpu, D_gpu, Fprev_gpu, Fcurr_gpu);
+
+        grid_size = 1 + ((numEdges - 1) / NUM_THREADS);
+        calcHittingNums<<<grid_size, NUM_THREADS>>>(hittingNumArray_gpu,
+            edgeArray_gpu,
+            D_gpu,
+            Fprev_gpu,
+            L-l
+        );
+        cudaMemcpy(Fprev_gpu, Fcurr_gpu, vertexExp*sizeof(float), cudaMemcpyDeviceToDevice);
+    }
+
+    cudaMemcpy(hittingNumArray, hittingNumArray_gpu, numEdges*sizeof(byte), cudaMemcpyDeviceToHost);
+
 }

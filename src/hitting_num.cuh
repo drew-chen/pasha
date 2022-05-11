@@ -7,7 +7,8 @@ using byte = uint8_t;
 /** Initialize cuda stuff */
 void initHittingNum(unsigned_int LParam, unsigned_int vertexExpParam, unsigned_int dSizeParam, unsigned_int numEdgesParam, byte* edgeArray);
 
-void calcNumStartingPaths(byte* edgeArray, float* D, float* Fprev);
+
+void calcNumPaths(byte* edgeArray, float* D, double* hittingNumArray);
 
 /** Cleanup, frees resources used by the device. */
 void finalizeHittingNum();
