@@ -239,10 +239,10 @@ class PASHA {
         Fprev = new float[vertexExp];
         //double* Fpool = new double[(l+1)* vertexExp];
        // for(int i = 0; i < l+1; i++, Fpool += vertexExp) F[i] = Fpool;
-        initHittingNum(L, vertexExp, (unsigned_int)(l+1)*vertexExp, edgeNum, edgeArray);
+        initHittingNum(l, vertexExp, (unsigned_int)(l+1)*vertexExp, edgeNum, edgeArray);
         
 
-        calcNumPaths(edgeArray, D, hittingNumArray);
+        calcNumPaths(edgeArray, hittingNumArray);
 
         unsigned_int imaxHittingNum = calculateHittingNumberParallel(l, false, threads);
         cout << "Max hitting number: " << hittingNumArray[imaxHittingNum] << endl;
@@ -253,8 +253,7 @@ class PASHA {
             total = 0;
             unsigned_int hittingCountStage = 0;
             double pathCountStage = 0;
-            calcNumPaths(edgeArray, D, hittingNumArray);
-
+            calcNumPaths(edgeArray, hittingNumArray);
             imaxHittingNum = calculateHittingNumberParallel(l, true, threads);
             if (exit == -1) break;
             stageVertices = pushBackVector();
@@ -356,7 +355,6 @@ Calculates hitting number of all edges, counting paths of length L-k+1, in paral
                 }   
             }
         }
-        // TODO: move tthis into kernel
         for (unsigned_int i = 0; i < (unsigned_int)edgeNum; i++) {
             if ((hittingNumArray[i])*edgeArray[i] > maxHittingNum) {
                 maxHittingNum = hittingNumArray[i]; imaxHittingNum = i;
@@ -381,13 +379,5 @@ Calculates hitting number of all edges, counting paths of length L-k+1, in paral
         }
         return stageVertices;
     }
-    private:
-    float D_get(int row, int col) {
-        return D[row*vertexExp + col];
-    }
-    void D_set(int row, int col, float val) {
-        D[row*vertexExp + col] = val;
-    }
-
 };
 #endif
