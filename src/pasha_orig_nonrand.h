@@ -393,20 +393,11 @@ Calculates hitting number of all edges, counting paths of length L-k+1, in paral
             for (unsigned_int i = 0; i < vertexExp; i++) {
                 unsigned_int index = (i * 4);
                 Fcurr[i] = (edgeArray[index]*Fprev[index & vertexExpMask] + edgeArray[index + 1]*Fprev[(index + 1) & vertexExpMask] + edgeArray[index + 2]*Fprev[(index + 2) & vertexExpMask] + edgeArray[index + 3]*Fprev[(index + 3) & vertexExpMask]);
-                //cout << "Fexp: " << Fexp[i] << endl;
-                //Fval[i] = (Fprev[index & vertexExpMask] >> (Fexp[i] - Fexp[index & vertexExpMask])) + (Fprev[(index+1) & vertexExpMask] >> (Fexp[i] - Fexp[(index+1) & vertexExpMask])) + (Fprev[(index+2) & vertexExpMask] >> (Fexp[i] - Fexp[(index+2) & vertexExpMask])) + (Fprev[(index+3) & vertexExpMask] >> (Fexp[i] - Fexp[(index+3) & vertexExpMask]));
-                //if (Fval[i] > 63) {
-                //    Fexp[i] = Fexp[i] + 1;
-                //    Fval[i] = Fval[i] >> 1;
-                //}
-               //if (Fcurr[i] > maxF) maxF = Fcurr[i]; 
-               //cout << Fval[i] << endl;
+
             }
             #pragma omp parallel for num_threads(threads)
             for (unsigned_int i = 0; i < (unsigned_int)edgeNum; i++) {
-                //cout << Fprev[i % vertexExp] << " " << ((float)(Dval[(L-curr)][i / ALPHABET_SIZE] * pow(2, Dexp[(L-curr)][i / ALPHABET_SIZE]))) << endl;
                 hittingNumArray[i] += (Fprev[i % vertexExp]/1.4e-45) * (D[L-curr][i / ALPHABET_SIZE] / 1.4e-45);
-                //cout << hittingNumArray[i] << endl;
                 if (edgeArray[i] == 0) hittingNumArray[i] = 0;
             }
             #pragma omp parallel for num_threads(threads)

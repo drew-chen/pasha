@@ -102,7 +102,7 @@ void calcNumStartingPaths(byte* edgeArray, float* D, float* Fprev) {
     // printf("---END---\n");
 }
 
-__global__ void calcNumEndingPaths(byte* edgeArray, float* D, float* Fprev, float* Fcurr) {
+__global__ void calcNumEndingPaths(byte* edgeArray, float* Fprev, float* Fcurr) {
     /**
     * This function generates F. F(v,i): # of i long paths ending at v after decycling
     */
@@ -137,16 +137,16 @@ void calcNumPaths(byte* edgeArray, float* D, double* hittingNumArray) {
     calcNumStartingPaths(edgeArray_gpu, D_gpu, Fprev_gpu);
 
 
-    for (int l = 0; l < L; ++l) {
+    for (int l = L - 1; l >= 0; --l) {
         int grid_size = 1 + ((vertexExp - 1) / NUM_THREADS);
-        calcNumEndingPaths<<<grid_size, NUM_THREADS>>>(edgeArray_gpu, D_gpu, Fprev_gpu, Fcurr_gpu);
+        calcNumEndingPaths<<<grid_size, NUM_THREADS>>>(edgeArray_gpu, Fprev_gpu, Fcurr_gpu);
 
         grid_size = 1 + ((numEdges - 1) / NUM_THREADS);
         calcHittingNums<<<grid_size, NUM_THREADS>>>(hittingNumArray_gpu,
             edgeArray_gpu,
             D_gpu,
             Fprev_gpu,
-            L-l
+            l
         );
         cudaMemcpy(Fprev_gpu, Fcurr_gpu, vertexExp*sizeof(float), cudaMemcpyDeviceToDevice);
     }
