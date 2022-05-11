@@ -25,8 +25,6 @@ float* Fcurr_gpu;
 float* D_gpu;
 double* hittingNumArray_gpu;
 
-
-// assumes already inited
 __device__ float D_get(float* D, int row, int col) {
     return D[row*vertexExp_gpu + col];
 }
@@ -87,7 +85,7 @@ void calcNumStartingPaths(byte* edgeArray, float* D, float* Fprev) {
     int grid_size = 1 + ((vertexExp - 1) / NUM_THREADS);
     setInitialDFprev_gpu<<<grid_size, NUM_THREADS>>>(D_gpu, Fprev_gpu); 
 
-    // // TODO: replace loop with this https://towardsdatascience.com/gpu-optimized-dynamic-programming-8d5ba3d7064f
+    // TODO: replace loop with this https://towardsdatascience.com/gpu-optimized-dynamic-programming-8d5ba3d7064f
     for (unsigned_int j = 1; j <= L; j++) {
         calcNumStartingPathsOneIter_gpu<<<grid_size, NUM_THREADS>>>(D_gpu, edgeArray_gpu, j); 
     }
